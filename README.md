@@ -7,7 +7,7 @@ Interactive-Dynamic-Images is an innovative interactive dynamic image viewer des
 
 ## 演示 / Demo
 
-![Demo](./demo.gif)
+![Demo](demo.gif)
 
 ## 功能 / Features
 - **多角度展示** / **Multi-angle Display**: 支持从多个角度展示图像。
