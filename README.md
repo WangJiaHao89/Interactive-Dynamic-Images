@@ -32,7 +32,7 @@ Interactive-Dynamic-Images is an innovative interactive dynamic image viewer des
 - **compressionQuality**: 压缩质量，范围为 0.01 到 1.0。
 
 示例代码 / Example Code:
-\`\`\`java
+ ``` java
 public static void main(String[] args) {
     String input = "path/to/input/folder";
     String outputFilePath = "path/to/output.wdp";
@@ -45,7 +45,7 @@ public static void main(String[] args) {
         e.printStackTrace();
     }
 }
-\`\`\`
+ ``` 
 
 ### JavaScript 使用 / JavaScript Usage
 
@@ -61,7 +61,7 @@ public static void main(String[] args) {
 - **onImagesLoaded**: 当图片加载完成时的回调函数。
 
 示例代码 / Example Code:
-\`\`\`html
+ ``` html
 <!DOCTYPE html>
 <html>
 <head>
@@ -101,7 +101,7 @@ public static void main(String[] args) {
     </script>
 </body>
 </html>
-\`\`\`
+ ``` 
 
 ## 授权 / License
 
