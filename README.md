@@ -5,6 +5,10 @@
 
 Interactive-Dynamic-Images is an innovative interactive dynamic image viewer designed to offer users a seamless and intuitive image browsing experience. Users can display images from multiple angles and switch perspectives by sliding with a mouse or finger, allowing for viewing from any angle.
 
+## 演示 / Demo
+
+![Demo](./demo.gif)
+
 ## 功能 / Features
 - **多角度展示** / **Multi-angle Display**: 支持从多个角度展示图像。
 - **视角切换** / **Perspective Switching**: 通过鼠标或手指滑动轻松切换视角。
@@ -15,9 +19,9 @@ Interactive-Dynamic-Images is an innovative interactive dynamic image viewer des
 ## 安装 / Installation
 
 1. 克隆此仓库 / Clone this repository:
-    \`\`\`bash
+     ``` bash
     git clone https://github.com/WangJiaHao89/Interactive-Dynamic-Images.git
-    \`\`\`
+     ``` 
 
 2. 打开 \`index.html\` 文件以在浏览器中查看 / Open the \`index.html\` file to view in the browser.
 
