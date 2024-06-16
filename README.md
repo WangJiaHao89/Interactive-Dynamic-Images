@@ -1,9 +1,9 @@
 
 # 任意图 / Interactive-Dynamic-Images
 
-任意图是一款创新的交互式动态图查看器，旨在为用户提供流畅、直观的图片浏览体验。用户可以从多个角度展示图像，并通过鼠标或手指滑动切换视角，查看任意视角的画面。
+任意图是一款创新的交互式动态图查看器，旨在为用户提供流畅、直观的图片浏览体验。用户可以从多个角度展示图像，并通过鼠标或手指滑动切换视角，查看任意视角的画面。该工具适用于移动端，提供一种创新的图像展示和交互形式，增加互动和趣味性。
 
-Interactive-Dynamic-Images is an innovative interactive dynamic image viewer designed to offer users a seamless and intuitive image browsing experience. Users can display images from multiple angles and switch perspectives by sliding with a mouse or finger, allowing for viewing from any angle.
+Interactive-Dynamic-Images is an innovative interactive dynamic image viewer designed to offer users a seamless and intuitive image browsing experience. Users can display images from multiple angles and switch perspectives by sliding with a mouse or finger, allowing for viewing from any angle. This tool is suitable for mobile devices, providing a novel form of image display and interaction, enhancing engagement and fun.
 
 ## 演示 / Demo
 
