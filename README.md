@@ -11,10 +11,10 @@ Interactive-Dynamic-Images is an innovative interactive dynamic image viewer des
 
 ## 功能 / Features
 - **多角度展示** / **Multi-angle Display**: 支持从多个角度展示图像。
-- **视角切换** / **Perspective Switching**: 通过鼠标或手指滑动轻松切换视角。
+- **视角切换** / **Perspective Switching**: 通过鼠标、手指或倾斜手机滑动轻松切换视角。
 - **旋转与翻转** / **Rotation and Flipping**: 轻松旋转和翻转图片，提供灵活的视角调整。
 - **进度条与索引显示** / **Progress Bar and Index Display**: 显示当前图片的位置，让用户时刻掌握浏览进度。
-- **触摸与鼠标控制** / **Touch and Mouse Controls**: 支持触摸和鼠标操作，适用于各种设备和使用场景。
+- **触摸与鼠标控制** / **Touch and Mouse Controls**: 支持触摸、倾斜手机和鼠标操作，适用于各种设备和使用场景。
 
 ## 安装 / Installation
 
