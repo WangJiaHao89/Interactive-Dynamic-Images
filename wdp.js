@@ -1,16 +1,24 @@
 class ImageViewer {
-    constructor(containerId, trackMapPosition = 'br', showIndex = true, showProgressBar = true, progressBarPosition = 'bottom', onImagesLoaded = null, rotate = 0, flipHorizontal = false) {
+    constructor(containerId, {
+        trackMapPosition = 'br',
+        showIndex = true,
+        showProgressBar = true,
+        progressBarPosition = 'bottom',
+        onImagesLoaded = null,
+        rotate = 0,
+        flipHorizontal = false
+    }) {
         this.container = document.getElementById(containerId);
         this.container.style.position = 'relative';
         this.container.style.overflow = 'hidden';
 
-        // 创建并附加canvas元素
+        // Create and append canvas
         this.canvas = document.createElement('canvas');
         this.canvas.id = 'imageCanvas';
         this.container.appendChild(this.canvas);
         this.ctx = this.canvas.getContext('2d');
 
-        // 创建并附加trackMap元素
+        // Create and append track map
         this.trackMap = document.createElement('div');
         this.trackMap.id = 'trackMap';
         this.trackMap.style.position = 'absolute';
@@ -22,7 +30,7 @@ class ImageViewer {
         this.trackMap.style.boxShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
         this.container.appendChild(this.trackMap);
 
-        // 创建并附加加载指示器
+        // Create and append loading indicator
         this.loadingIndicator = document.createElement('div');
         this.loadingIndicator.style.position = 'absolute';
         this.loadingIndicator.style.top = '50%';
@@ -46,6 +54,7 @@ class ImageViewer {
         this.currentImageIndex = 0;
         this.isDragging = false;
         this.startX = 0;
+        this.totalImages = 0;
         this.imageCount = 0;
         this.onImagesLoaded = onImagesLoaded;
 
@@ -56,6 +65,14 @@ class ImageViewer {
         this.rotate = rotate;
         this.flipHorizontal = flipHorizontal;
 
+        // 添加陀螺仪控制相关变量
+        this.gyroControlEnabled = false;
+        this.gyroListener = this.handleGyro.bind(this);
+
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', this.gyroListener);
+        }
+
         if (this.showProgressBar) {
             this.createProgressBar();
         }
@@ -65,7 +82,6 @@ class ImageViewer {
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
-    // 创建进度条
     createProgressBar() {
         this.progressBarContainer = document.createElement('div');
         this.progressBarContainer.style.position = 'absolute';
@@ -128,7 +144,6 @@ class ImageViewer {
         });
     }
 
-    // 设置trackMap位置
     setTrackMapPosition(position) {
         const positionClasses = {
             tl: { top: '10px', left: '10px', right: 'auto', bottom: 'auto' },
@@ -151,17 +166,19 @@ class ImageViewer {
         }
     }
 
-    // 加载WDP文件
-    async loadWdpFile(path) {
-        const response = await fetch(path);
-        if (!response.ok) {
-            throw new Error(`Failed to load ${path}`);
+    async loadWdpFile(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to load WDP file from ${url}`);
+            }
+            const buffer = await response.arrayBuffer();
+            await this.handleFile(buffer);
+        } catch (error) {
+            console.error('Error loading WDP file:', error);
         }
-        const buffer = await response.arrayBuffer();
-        return buffer;
     }
 
-    // 处理WDP文件
     async handleFile(buffer) {
         try {
             const zip = await JSZip.loadAsync(buffer);
@@ -174,51 +191,46 @@ class ImageViewer {
             }
 
             const totalImagesBuffer = await zip.file("totalImages").async("arraybuffer");
-            const totalImages = new DataView(totalImagesBuffer).getInt32(0);
+            this.totalImages = new DataView(totalImagesBuffer).getInt32(0);
 
-            const files = zip.files;
-            for (let i = 0; i < totalImages; i++) {
-                const imageName = `image${i}.jpg`;
-                if (!files[imageName]) {
-                    console.warn(`Image file for ${imageName} not found`);
-                    continue;
-                }
+            this.loadImages(zip);
+        } catch (error) {
+            console.error('Error handling file:', error);
+        }
+    }
 
+    async loadImages(zip) {
+        for (let i = 0; i < this.totalImages; i++) {
+            const imageName = `image${i}.jpg`;
+            try {
                 const imageData = await zip.file(imageName).async("blob");
                 const img = new Image();
                 img.src = URL.createObjectURL(imageData);
                 await new Promise((resolve) => { img.onload = resolve; });
 
                 this.images.push(img);
+                this.drawImage(this.images.length - 1);
+
+                if (this.showProgressBar) {
+                    this.updateProgressBar(this.images.length - 1);
+                }
+
+                this.updateTrackMap(this.images.length - 1);
+            } catch (error) {
+                console.error(`Error loading image ${i}:`, error);
             }
+        }
 
-            this.imageCount = this.images.length;
-            this.drawImage(0); // 默认显示第一张图
+        clearInterval(this.loadingInterval);
+        this.loadingIndicator.style.display = 'none';
 
-            // 移除加载中的提示
-            clearInterval(this.loadingInterval);
-            this.loadingIndicator.style.display = 'none';
+        this.gyroControlEnabled = true; // 启用陀螺仪控制
 
-            // 调用加载成功回调
-            if (this.onImagesLoaded) {
-                this.onImagesLoaded();
-            }
-        } catch (error) {
-            console.error('Error handling file:', error);
+        if (this.onImagesLoaded) {
+            this.onImagesLoaded();
         }
     }
 
-    // 加载WDP文件并处理
-    async load(path) {
-        try {
-            const buffer = await this.loadWdpFile(path);
-            await this.handleFile(buffer);
-        } catch (error) {
-            console.error('Error loading .wdp file:', error);
-        }
-    }
-
-    // 绘制指定索引的图片
     drawImage(index) {
         if (index < 0 || index >= this.images.length) {
             console.error(`Image at index ${index} is undefined`);
@@ -241,27 +253,22 @@ class ImageViewer {
                 drawWidth = containerHeight * imgAspectRatio;
             }
 
-            // 根据旋转角度计算新的canvas尺寸
             const rad = this.rotate * Math.PI / 180;
             const sin = Math.abs(Math.sin(rad));
             const cos = Math.abs(Math.cos(rad));
             const newCanvasWidth = drawWidth * cos + drawHeight * sin;
             const newCanvasHeight = drawWidth * sin + drawHeight * cos;
-
-            // 确保canvas尺寸适应容器
             const scale = Math.min(containerWidth / newCanvasWidth, containerHeight / newCanvasHeight);
 
             this.canvas.width = containerWidth;
             this.canvas.height = containerHeight;
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            // 将canvas居中
             this.canvas.style.position = 'absolute';
             this.canvas.style.left = '50%';
             this.canvas.style.top = '50%';
             this.canvas.style.transform = 'translate(-50%, -50%)';
 
-            // 应用变换
             this.ctx.save();
             this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
             if (this.rotate !== 0) {
@@ -272,20 +279,14 @@ class ImageViewer {
             }
             this.ctx.drawImage(img, -drawWidth / 2 * scale, -drawHeight / 2 * scale, drawWidth * scale, drawHeight * scale);
             this.ctx.restore();
-
-            this.updateTrackMap(index);
-            if (this.showProgressBar) {
-                this.updateProgressBar(index);
-            }
         } catch (error) {
             console.error('Error drawing image:', error);
         }
     }
 
-    // 更新trackMap
     updateTrackMap(index) {
         const current = index + 1;
-        const total = this.images.length;
+        const total = this.totalImages;
         if (this.showIndex) {
             this.trackMap.textContent = `${current}/${total}`;
             this.trackMap.style.display = 'block';
@@ -294,51 +295,52 @@ class ImageViewer {
         }
     }
 
-    // 更新进度条
     updateProgressBar(index) {
-        const percentage = (index + 1) / this.images.length * 100;
+        const percentage = (index + 1) / this.totalImages * 100;
         this.progressBar.style.width = `${percentage}%`;
     }
 
-    // 初始化事件监听器
     initEventListeners() {
         this.canvas.addEventListener('touchstart', (event) => {
             this.startX = event.touches[0].clientX;
             this.isDragging = true;
-            event.preventDefault(); // 阻止默认行为
+            this.gyroControlEnabled = false; // 暂停陀螺仪控制
+            event.preventDefault();
         });
 
         this.canvas.addEventListener('touchmove', (event) => {
             if (!this.isDragging) return;
             const touchX = event.touches[0].clientX;
             this.updateImageIndex(touchX);
-            event.preventDefault(); // 阻止默认行为
+            event.preventDefault();
         });
 
         this.canvas.addEventListener('touchend', (event) => {
             this.isDragging = false;
-            event.preventDefault(); // 阻止默认行为
+            this.gyroControlEnabled = true; // 恢复陀螺仪控制
+            event.preventDefault();
         });
 
         this.canvas.addEventListener('mousedown', (event) => {
             this.startX = event.clientX;
             this.isDragging = true;
-            event.preventDefault(); // 阻止默认行为
+            this.gyroControlEnabled = false; // 暂停陀螺仪控制
+            event.preventDefault();
         });
 
         this.canvas.addEventListener('mousemove', (event) => {
             if (!this.isDragging) return;
             const mouseX = event.clientX;
             this.updateImageIndex(mouseX);
-            event.preventDefault(); // 阻止默认行为
+            event.preventDefault();
         });
 
         this.canvas.addEventListener('mouseup', (event) => {
             this.isDragging = false;
-            event.preventDefault(); // 阻止默认行为
+            this.gyroControlEnabled = true; // 恢复陀螺仪控制
+            event.preventDefault();
         });
 
-        // 阻止整个文档的触摸移动事件，以防止浏览器默认的左右滑动行为
         document.addEventListener('touchmove', (event) => {
             event.preventDefault();
         }, { passive: false });
@@ -352,9 +354,23 @@ class ImageViewer {
         });
     }
 
-    // 更新当前图片索引
+    handleGyro(event) {
+        if (this.isDragging || !this.gyroControlEnabled) return;
+
+        const threshold = 10; // 调整倾斜灵敏度
+        let tilt = event.gamma; // 设备左右倾斜的度数
+
+        if (tilt > threshold) {
+            this.currentImageIndex = Math.min(this.images.length - 1, this.currentImageIndex + 1);
+        } else if (tilt < -threshold) {
+            this.currentImageIndex = Math.max(0, this.currentImageIndex - 1);
+        }
+
+        this.drawImage(this.currentImageIndex);
+    }
+
     updateImageIndex(clientX) {
-        const edgeThreshold = 50; // 离右侧边缘50像素内显示最后一张图片
+        const edgeThreshold = 50;
         const screenWidth = this.canvas.width;
 
         if (clientX >= screenWidth - edgeThreshold) {
@@ -369,24 +385,21 @@ class ImageViewer {
         this.drawImage(this.currentImageIndex);
     }
 
-    // 更新进度条中的图片
     updateProgressBarImage(clientX) {
         const rect = this.progressBarContainer.getBoundingClientRect();
         const clickX = clientX - rect.left;
         const percentage = clickX / rect.width;
-        this.currentImageIndex = Math.floor(percentage * this.images.length);
+        this.currentImageIndex = Math.floor(percentage * this.totalImages);
 
-        // 确保索引在有效范围内
         if (this.currentImageIndex < 0) {
             this.currentImageIndex = 0;
-        } else if (this.currentImageIndex >= this.images.length) {
-            this.currentImageIndex = this.images.length - 1;
+        } else if (this.currentImageIndex >= this.totalImages) {
+            this.currentImageIndex = this.totalImages - 1;
         }
 
         this.drawImage(this.currentImageIndex);
     }
 
-    // 调整canvas大小
     resizeCanvas() {
         if (this.images.length > 0) {
             this.drawImage(this.currentImageIndex);
@@ -394,5 +407,9 @@ class ImageViewer {
     }
 }
 
-// 将 ImageViewer 暴露为全局对象
 window.ImageViewer = ImageViewer;
+
+async function loadAndInitializeViewer(containerId, url, options) {
+    const viewer = new ImageViewer(containerId, options);
+    await viewer.loadWdpFile(url);
+}
